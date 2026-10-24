@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поле Чудес - DOS 1993 (Mini App)</title>
+    <style>
+        :root {
+            --dos-bg: #808080; /* Классический серый фон DOS */
+            --brick-blue: #0000aa; /* Синий цвет стен */
+            --dark-panel: #000000;
+            --text-yellow: #ffff55;
+            --text-white: #ffffff;
+            --snickers-blue: #0a1172;
+        }
+
+        body {
+            background-color: var(--dos-bg);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-white);
+        }
+
+        /* Главный экран в стиле DOS-окна */
+        .dos-screen {
+            width: 100%;
+            max-width: 420px;
+            background: var(--dark-panel);
+            border: 4px ridge #ffffff;
+            padding: 8px;
+            box-sizing: border-box;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+
+        /* Верхняя зона с кирпичной текстурой */
+        .brick-header {
+            background: repeating-linear-gradient(
+                0deg,
+                #0000aa,
+                #0000aa 10px,
+                #000055 10px,
+                #000055 12px
+            );
+            border: 2px solid #5555ff;
+            padding: 8px;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        /* Табло со словом */
+        .word-board {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            margin-bottom: 4px;
+        }
+
+        .letter-box {
+            width: 26px;
+            height: 32px;
+            background: #444;
+            border: 2px solid #aaa;
+            color: #ffff55;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 1px 1px #000;
+        }
+
+        .game-subinfo {
+            font-size: 11px;
+            color: #ffff55;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.6);
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1px dashed #ffff55;
+        }
+
+        /* Центральная боевая зона (Игроки, Пятачок, Барабан, Ведущий) */
+        .battle-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #00aa55; /* Классический зеленый сукно-фон */
+            border: 3px solid #ffffff;
+            padding: 6px;
+            margin-bottom: 6px;
+            position: relative;
+            min-height: 160px;
+        }
+
+        /* Портреты игроков / ведущего */
+        .side-panel {
+            width: 75px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .character-box {
+            width: 65px;
+            height: 65px;
+            background: #d4d0c8;
+            border: 2px solid #000;
+            margin: 0 auto 2px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            position: relative;
+        }
+
+        .snickers-tag {
+            background: var(--snickers-blue);
+            color: #ffffff;
+            font-size: 8px;
+            font-style: italic;
+            font-weight: bold;
+            border: 1px solid #ffcc00;
+            padding: 1px 3px;
+            margin-top: 2px;
+            display: inline-block;
+            letter-spacing: 0.5px;
+        }
+
+        .player-label {
+            background: #000;
+            color: #fff;
+            font-size: 9px;
+            padding: 1px;
+            border: 1px solid #aaa;
+            margin-top: 2px;
+        }
+
+        /* Центр: Пятачок и Барабан */
+        .center-stage {
+            flex-grow: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .piggy-top {
+            font-size: 9px;
+            background: #000;
+            color: #ff99ff;
+            padding: 1px 4px;
+            border: 1px solid #ff99ff;
+            margin-bottom: 2px;
+        }
+
+        /* Черно-белый барабан */
+        .wheel-container {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            margin: 4px auto;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            position: relative;
+            /* Черно-белые сектора в стиле оригинального барабана Башурова */
+            background: conic-gradient(
+                #000 0deg 36deg, #fff 36deg 72deg,
+                #000 72deg 108deg, #fff 108deg 144deg,
+                #000 144deg 180deg, #fff 180deg 216deg,
+                #000 216deg 252deg, #fff 252deg 288deg,
+                #000 288deg 324deg, #fff 324deg 360deg
+            );
+            transition: transform 3s cubic-bezier(0.15, 0.85, 0.15, 1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 12px solid #ff0000;
+            z-index: 10;
+        }
+
+        .wheel-center-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px;
+            height: 36px;
+            background: #ffcc00;
+            border: 2px solid #000;
+            border-radius: 50%;
+            font-size: 8px;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 5;
+        }
+
+        /* Инфо-панель снизу */
+        .info-panel {
+            background: #0000aa;
+            border: 2px solid #5555ff;
+            padding: 6px;
+            text-align: center;
+            font-size: 11px;
+            margin-bottom: 6px;
+            color: #ffff55;
+            font-weight: bold;
+        }
+
+        /* Сплошная строка алфавита внизу, как в DOS */
+        .dos-keyboard {
+            background: #000;
+            border: 2px solid #aaa;
+            padding: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .dos-key {
+            background: #00aa00;
+            color: #fff;
+            border: 1px solid #fff;
+            width: 21px;
+            height: 24px;
+            font-size: 12px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dos-key:active, .dos-key.used {
+            background: #333;
+            color: #777;
+            border-color: #555;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dos-screen">
+    <!-- Синяя кирпичная шапка со словом -->
+    <div class="brick-header">
+        <div class="word-board" id="wordBoard"></div>
+        <div class="game-subinfo">1 / 64 ФИНАЛА</div>
+    </div>
+
+    <!-- Основное поле с персонажами и барабаном -->
+    <div class="battle-field">
+        <!-- 2-й игрок слева -->
+        <div class="side-panel">
+            <div class="character-box">👤</div>
+            <div class="snickers-tag">SNICKERS</div>
+            <div class="player-label">2-й ИГРОК<br>ИЛЬЯ</div>
+        </div>
+
+        <!-- Центр: Пятачок и Барабан -->
+        <div class="center-stage">
+            <div class="piggy-top">1-й ИГРОК ПЯТАЧОК</div>
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel" id="wheel"></div>
+                <button class="wheel-center-btn" id="spinBtn" onclick="spinWheel()">КРУТИТЬ</button>
+            </div>
+        </div>
+
+        <!-- Ведущий справа в рамке -->
+        <div class="side-panel">
+            <div class="character-box">🧔</div>
+            <div class="snickers-tag">SNICKERS</div>
+            <div class="player-label">ВЕДУЩИЙ</div>
+        </div>
+    </div>
+
+    <!-- Текстовое поле уведомлений / очки -->
+    <div class="info-panel" id="infoPanel">
+        ОЧКИ: 0 | НАЖМИТЕ «КРУТИТЬ» НА БАРАБАНЕ
+    </div>
+
+    <!-- Нижняя строка букв (как в оригинальном DOS) -->
+    <div class="dos-keyboard" id="dosKeyboard"></div>
+</div>
+
+<script>
+    const secretWord = "БАШУРОВ";
+    let score = 0;
+    let currentSector = 0;
+    let canGuess = false;
+    let guessedLetters = new Set();
+    let currentRotation = 0;
+
+    const sectors = [100, 250, 500, 1000, 0, 200, 300, 50, 500, 150]; // 0 - Банкрот
+
+    function initBoard() {
+        const board = document.getElementById('wordBoard');
+        board.innerHTML = '';
+        for (let char of secretWord) {
+            const box = document.createElement('div');
+            box.className = 'letter-box';
+            box.innerText = guessedLetters.has(char) ? char : '';
+            board.appendChild(box);
+        }
+    }
+
+    function initKeyboard() {
+        const kb = document.getElementById('dosKeyboard');
+        kb.innerHTML = '';
+        const alphabet = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+        for (let char of alphabet) {
+            const btn = document.createElement('button');
+            btn.className = 'dos-key';
+            btn.innerText = char;
+            btn.id = 'key-' + char;
+            btn.onclick = () => guessLetter(char);
+            kb.appendChild(btn);
+        }
+    }
+
+    function spinWheel() {
+        if (canGuess) {
+            setInfo("СНАЧАЛА НАЗОВИТЕ БУКВУ ВНИЗУ!");
+            return;
+        }
+
+        document.getElementById('spinBtn').disabled = true;
+        const randomIndex = Math.floor(Math.random() * sectors.length);
+        currentSector = sectors[randomIndex];
+
+        currentRotation += 360 * 4 + (randomIndex * (360 / sectors.length));
+        document.getElementById('wheel').style.transform = `rotate(${currentRotation}deg)`;
+
+        setTimeout(() => {
+            if (currentSector === 0) {
+                score = 0;
+                updateInfo("БАНКРОТ! ОЧКИ СГОРАЛИ. ХОД ПЕРЕХОДИТ.");
+                document.getElementById('spinBtn').disabled = false;
+            } else {
+                updateInfo(`ВЫПАЛО ОЧКОВ: ${currentSector}. НАЗОВИТЕ БУКВУ!`);
+                canGuess = true;
+            }
+        }, 3100);
+    }
+
+    function guessLetter(char) {
+        if (!canGuess) {
+            setInfo("КРУТИТЕ БАРАБАН СНАЧАЛА!");
+            return;
+        }
+
+        document.getElementById('key-' + char).classList.add('used');
+        guessedLetters.add(char);
+
+        if (secretWord.includes(char)) {
+            let count = [...secretWord].filter(x => x === char).length;
+            score += currentSector * count;
+            initBoard();
+
+            if ([...secretWord].every(l => guessedLetters.has(l))) {
+                updateInfo("ПОБЕДА! СЛОВО ОТГАДАНО!");
+                document.getElementById('spinBtn').disabled = true;
+                canGuess = false;
+                return;
+            }
+            updateInfo(`ЕСТЬ БУКВА «${char}»! КРУТИТЕ СНОВА.`);
+        } else {
+            updateInfo(`НЕТ ТАКОЙ БУКВЫ! ХОД СГОРАЕТ.`);
+        }
+
+        updateScoreDisplay();
+        canGuess = false;
+        document.getElementById('spinBtn').disabled = false;
+    }
+
+    function updateScoreDisplay() {
+        // Обновление строки информации
+    }
+
+    function updateInfo(text) {
+        document.getElementById('infoPanel').innerText = `ОЧКИ: ${score} | ${text}`;
+    }
+
+    function setInfo(text) {
+        document.getElementById('infoPanel').innerText = text;
+    }
+
+    initBoard();
+    initKeyboard();
+</script>
+
+</body>
+</html>
